@@ -1,0 +1,11 @@
+*.parquet
+*.csv
+*.h5
+*.zarr
+*.pth
+*.pkl
+*.json
+*.pt
+.idea/
+*.egg-info
+*.png
