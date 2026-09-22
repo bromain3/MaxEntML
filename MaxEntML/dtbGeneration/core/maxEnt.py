@@ -281,7 +281,7 @@ def _solve(q, r):
 # ----------------------------------------------------------------------------
 
 @torch.no_grad()
-def compute_lambdas(q, r, batch_size=2048):
+def compute_lambdas(q, r, batch_size=2000):
     """
     Lambdas MaxEnt sur une grille (Nu, Nv) de points (q*, r*).
 

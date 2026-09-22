@@ -26,8 +26,8 @@ storingDtype = torch.float64
 #_________________________________________________________
 
 ## generation de la base de données de train
-qr2xyDataObj = qr2xyData(q_max=3, r_max=15, eps=10**(-1.5), beta_q=2.9, gamma_r=1.8)
-qr, lambdas = generateTrainingDatabase(qr2xyDataObj, Nx=100, Ny=40, storingDtype=storingDtype, storingDevice=storingDevice)
+qr2xyDataObj = qr2xyData(q_max=3, r_max=15, eps=1e-1, beta_q=1.5, gamma_r=1.5)
+qr, lambdas = generateTrainingDatabase(qr2xyDataObj, Nx=int(0.5**(0.5)*200), Ny=int(0.5**(0.5)*80), storingDtype=storingDtype, storingDevice=storingDevice)
 plotLambdasSymLog(qr, lambdas)
 qr, lambdas = clean(qr, lambdas, verbose=True)
 

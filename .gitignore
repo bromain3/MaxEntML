@@ -5,6 +5,7 @@
 *.pth
 *.pkl
 *.json
+*.joblib
 *.pt
 .idea/
 *.egg-info
