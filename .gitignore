@@ -10,3 +10,5 @@
 .idea/
 *.egg-info
 *.png
+__pycache__/
+*.py[cod]
