@@ -1,9 +1,9 @@
-import numpy as np
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import matplotlib.tri as mtri
-import matplotlib.colors as mcolors
-from matplotlib import cm
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401  (enregistre la projection '3d')
+import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
 
 
 # ============================================================================
@@ -11,19 +11,22 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401  (enregistre la projection
 # ============================================================================
 
 def _extract_data(qr, lambdas):
-    """Convertit qr['q'], qr['r'] et lambdas (tenseurs) en tableaux numpy."""
+    """Convertit qr['q'], qr['r'] ou qr['x'], qr['y'] et lambdas (tenseurs) en tableaux numpy et renvoie les étiquettes d'axes."""
     if 'q' in qr.colName and 'r' in qr.colName:
         q_flat = qr['q'].data.cpu().detach().numpy().ravel()
         r_flat = qr['r'].data.cpu().detach().numpy().ravel()
+        xlabel, ylabel = "$q^*$", "$r^*$"
     elif 'x' in qr.colName and 'y' in qr.colName:
         q_flat = qr['x'].data.cpu().detach().numpy().ravel()
         r_flat = qr['y'].data.cpu().detach().numpy().ravel()
+        xlabel, ylabel = "$x$", "$y$"
     else:
-        raise ValueError('Imposible to extract q and r or x and y from the data')
+        raise ValueError('Impossible to extract q and r or x and y from the data')
+
     lambdas_flat = lambdas.data.cpu().detach().numpy()
     if lambdas_flat.ndim == 1:
         lambdas_flat = lambdas_flat[:, None]
-    return q_flat, r_flat, lambdas_flat
+    return q_flat, r_flat, lambdas_flat, xlabel, ylabel
 
 
 def _levels_from_norm(norm: mcolors.Normalize, n_levels: int) -> np.ndarray:
@@ -77,32 +80,30 @@ def _valid_positive(L_k):
 # Version 2D (contours, tricontourf)
 # ============================================================================
 
-def _plot_phase_space(ax, q_flat, r_flat):
-    """Subplot de l'espace des phases (identique à la version d'origine)."""
+def _plot_phase_space(ax, q_flat, r_flat, xlabel="$q^*$", ylabel="$r^*$"):
+    """Subplot de l'espace des phases (adapté aux étiquettes dynamiques)."""
     ax.scatter(q_flat, r_flat, s=8, c="tab:blue", zorder=3, label="Points")
 
-    q_ref = np.linspace(np.min(q_flat) - 0.1, np.max(q_flat) + 0.1, 400)
-    ax.plot(q_ref, 1.0 + q_ref**2, "r--", lw=1.2, label=r"Boundary ($r^* = 1 + q^{*2}$)")
-    ax.vlines(0, 1.0, np.max(r_flat), colors="k", linestyles=":", alpha=0.6,
-              label="Junk Line ($q^*=0$)")
+    if xlabel == "$q^*$":
+        q_ref = np.linspace(np.min(q_flat) - 0.1, np.max(q_flat) + 0.1, 400)
+        ax.plot(q_ref, 1.0 + q_ref**2, "r--", lw=1.2, label=r"Boundary ($r^* = 1 + q^{*2}$)")
+        ax.vlines(0, 1.0, np.max(r_flat), colors="k", linestyles=":", alpha=0.6,
+                  label="Junk Line ($q^*=0$)")
+        title_str = r"Physical Phase Space $(q^*, r^*)$"
+    else:
+        title_str = f"Physical Phase Space ({xlabel.strip('$')}, {ylabel.strip('$')})"
 
-    ax.set_title("Physical Phase Space $(q^*, r^*)$", fontsize=11, fontweight="bold")
-    ax.set_xlabel("$q^*$", fontsize=10)
-    ax.set_ylabel("$r^*$", fontsize=10)
+    ax.set_title(title_str, fontsize=11, fontweight="bold")
+    ax.set_xlabel(xlabel, fontsize=10)
+    ax.set_ylabel(ylabel, fontsize=10)
     ax.grid(True, linestyle=":", alpha=0.4)
     ax.legend(loc="upper right", fontsize=8, framealpha=0.85)
 
 
 def _plot_lambdas_normed(qr, lambdas, *, norm_factory, valid_fn, cmap, n_levels,
                          chunk_size, scale_name):
-    """
-    Coeur commun aux versions 2D.
-
-    norm_factory(vals) -> Normalize | None : construit la norme à partir des valeurs
-                                             réellement utilisées (None = impossible).
-    valid_fn(L_k)      -> bool array       : points admissibles pour cette échelle.
-    """
-    q_flat, r_flat, lambdas_flat = _extract_data(qr, lambdas)
+    """Coeur commun aux versions 2D."""
+    q_flat, r_flat, lambdas_flat, xlabel, ylabel = _extract_data(qr, lambdas)
     n_lambdas = lambdas_flat.shape[1]
 
     # --- Triangulation unique, partagée par tous les subplots ---
@@ -149,18 +150,18 @@ def _plot_lambdas_normed(qr, lambdas, *, norm_factory, valid_fn, cmap, n_levels,
 
             ax.set_title(f"Multiplier $\\lambda_{{{k}}}$ ({scale_name})",
                          fontsize=11, fontweight="bold")
-            ax.set_xlabel("$q^*$", fontsize=10)
-            ax.set_ylabel("$r^*$", fontsize=10)
+            ax.set_xlabel(xlabel, fontsize=10)
+            ax.set_ylabel(ylabel, fontsize=10)
             ax.grid(True, linestyle=":", alpha=0.4)
 
         # Cache les subplots inutilisés (dernier paquet incomplet)
         for slot in range(stop - start, 5):
             axes[slot].axis("off")
 
-        _plot_phase_space(axes[5], q_flat, r_flat)
+        _plot_phase_space(axes[5], q_flat, r_flat, xlabel=xlabel, ylabel=ylabel)
 
         fig.suptitle(f"Multipliers $\\lambda_{{{start}}}$ – $\\lambda_{{{stop - 1}}}$ "
-                     f"— échelle {scale_name}", fontsize=13, fontweight="bold")
+                     f"— {scale_name} scale", fontsize=13, fontweight="bold")
         fig.tight_layout()
 
     plt.show()
@@ -174,8 +175,6 @@ def plotLambdasSymLog(qr: "serie", lambdas: "serie", chunk_size: int = 5,
     Chaque lambda_k est affiché avec une échelle bi-log (SymLogNorm, base 10) :
     logarithmique de part et d'autre de 0, linéaire dans [-linthresh, +linthresh].
     Gère donc les valeurs positives, négatives et nulles.
-
-    linthresh : si None, heuristique : max(1e-2, percentile_15(|lambda_k|)).
     """
     return _plot_lambdas_normed(
         qr, lambdas,
@@ -214,7 +213,7 @@ def plotLambdas(qr: "serie", lambdas: "serie", chunk_size: int = 5,
         norm_factory=_linear_norm_factory,
         valid_fn=_valid_finite,
         cmap=cmap, n_levels=n_levels, chunk_size=chunk_size,
-        scale_name="Linéaire",
+        scale_name="Linear",
     )
 
 
@@ -222,30 +221,28 @@ def plotLambdas(qr: "serie", lambdas: "serie", chunk_size: int = 5,
 # Version 3D (surfaces, plot_trisurf)
 # ============================================================================
 
-def _plot_phase_space_3d(ax, q_flat, r_flat):
+def _plot_phase_space_3d(ax, q_flat, r_flat, xlabel="$q^*$", ylabel="$r^*$"):
     """Version 3D du subplot phase space, aplati sur z=0 pour servir de repère."""
     ax.scatter(q_flat, r_flat, 0, s=8, c="tab:blue", zorder=3, label="Points")
 
-    q_ref = np.linspace(np.min(q_flat) - 0.1, np.max(q_flat) + 0.1, 400)
-    ax.plot(q_ref, 1.0 + q_ref**2, 0, "r--", lw=1.2, label=r"Boundary ($r^* = 1 + q^{*2}$)")
+    if xlabel == "$q^*$":
+        q_ref = np.linspace(np.min(q_flat) - 0.1, np.max(q_flat) + 0.1, 400)
+        ax.plot(q_ref, 1.0 + q_ref**2, 0, "r--", lw=1.2, label=r"Boundary ($r^* = 1 + q^{*2}$)")
+        title_str = r"Physical Phase Space $(q^*, r^*)$"
+    else:
+        title_str = f"Physical Phase Space ({xlabel.strip('$')}, {ylabel.strip('$')})"
 
-    ax.set_title("Physical Phase Space $(q^*, r^*)$", fontsize=11, fontweight="bold")
-    ax.set_xlabel("$q^*$", fontsize=10)
-    ax.set_ylabel("$r^*$", fontsize=10)
+    ax.set_title(title_str, fontsize=11, fontweight="bold")
+    ax.set_xlabel(xlabel, fontsize=10)
+    ax.set_ylabel(ylabel, fontsize=10)
     ax.set_zticks([])
     ax.legend(loc="upper right", fontsize=8, framealpha=0.85)
 
 
 def _plot_lambdas_normed_3d(qr, lambdas, *, norm_factory, valid_fn, cmap, n_levels,
                             chunk_size, scale_name):
-    """
-    Equivalent 3D de _plot_lambdas_normed : au lieu d'un contour rempli en 2D,
-    trace une surface triangulée plot_trisurf(q, r, lambda_k), coloree suivant
-    la meme norme (lineaire / log / symlog) que la version 2D. n_levels n'est
-    pas utilise ici (pas de discretisation par niveaux pour une surface) mais
-    est garde dans la signature pour un appel symetrique aux fonctions 2D.
-    """
-    q_flat, r_flat, lambdas_flat = _extract_data(qr, lambdas)
+    """Equivalent 3D de _plot_lambdas_normed."""
+    q_flat, r_flat, lambdas_flat, xlabel, ylabel = _extract_data(qr, lambdas)
     n_lambdas = lambdas_flat.shape[1]
 
     tri = mtri.Triangulation(q_flat, r_flat)
@@ -274,7 +271,7 @@ def _plot_lambdas_normed_3d(qr, lambdas, *, norm_factory, valid_fn, cmap, n_leve
 
             if norm is None:
                 ax.text2D(0.5, 0.5, "Aucune valeur valide\n(ou valeurs constantes)",
-                         ha="center", va="center", transform=ax.transAxes)
+                          ha="center", va="center", transform=ax.transAxes)
             else:
                 tri_k = mtri.Triangulation(q_flat, r_flat, triangles=tri.triangles,
                                            mask=tri_mask)
@@ -284,18 +281,18 @@ def _plot_lambdas_normed_3d(qr, lambdas, *, norm_factory, valid_fn, cmap, n_leve
                 fig.colorbar(surf, ax=ax, shrink=0.7, pad=0.1)
 
             ax.set_title(f"Multiplier $\\lambda_{{{k}}}$ ({scale_name})",
-                        fontsize=11, fontweight="bold")
-            ax.set_xlabel("$q^*$", fontsize=10)
-            ax.set_ylabel("$r^*$", fontsize=10)
+                         fontsize=11, fontweight="bold")
+            ax.set_xlabel(xlabel, fontsize=10)
+            ax.set_ylabel(ylabel, fontsize=10)
             ax.set_zlabel(f"$\\lambda_{{{k}}}$", fontsize=10)
 
         for slot in range(stop - start, 5):
             axes[slot].axis("off")
 
-        _plot_phase_space_3d(axes[5], q_flat, r_flat)
+        _plot_phase_space_3d(axes[5], q_flat, r_flat, xlabel=xlabel, ylabel=ylabel)
 
         fig.suptitle(f"Multipliers $\\lambda_{{{start}}}$ – $\\lambda_{{{stop - 1}}}$ "
-                    f"— échelle {scale_name} (3D)", fontsize=13, fontweight="bold")
+                     f"— {scale_name} scale (3D)", fontsize=13, fontweight="bold")
         fig.tight_layout()
 
     plt.show()
@@ -335,5 +332,5 @@ def plotLambdas3D(qr: "serie", lambdas: "serie", chunk_size: int = 5,
         norm_factory=_linear_norm_factory,
         valid_fn=_valid_finite,
         cmap=cmap, n_levels=n_levels, chunk_size=chunk_size,
-        scale_name="Linéaire",
+        scale_name="Linear",
     )
