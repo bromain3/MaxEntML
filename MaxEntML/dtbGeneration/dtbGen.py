@@ -73,8 +73,8 @@ def _make_qr_halton(q_max, r_max, eps, beta_q, gamma_r, Nsamples,
     return _uv_to_qr(u, v, q_max, r_max, eps, beta_q, gamma_r)
 
 
-def _build_database(q, r, storingDtype=None, storingDevice=None):
-    lambdas = compute_lambdas(q, r)
+def _build_database(q, r, batch_size=2000, storingDtype=None, storingDevice=None, computeDtype=None, computeDevice=None):
+    lambdas = compute_lambdas(q, r, batch_size=batch_size, storingDtype=storingDtype, storingDevice=storingDevice, compute_dtype=computeDtype, compute_device=computeDevice)
     lambdas = serie(lambdas, colName=[f"l{i}" for i in range(lambdas.shape[1])],
                     storingDtype=storingDtype, storingDevice=storingDevice)
 
@@ -85,22 +85,22 @@ def _build_database(q, r, storingDtype=None, storingDevice=None):
     return qr, lambdas
 
 
-def generateTargets(qr):
-    lambdas = compute_lambdas(qr['q'].data, qr['r'].data)
+def generateTargets(qr, batch_size=2000, computeDtype=None, computeDevice=None):
+    lambdas = compute_lambdas(qr['q'].data, qr['r'].data, batch_size=batch_size, compute_dtype=computeDtype, compute_device=computeDevice)
     return serie(lambdas, colName=[f'l{i}' for i in range(lambdas.shape[1])],
                  storingDtype=qr.storingDtype, storingDevice=qr.storingDevice)
 
 
-def generateTrainingDatabase(qr2xyParams, Nx, Ny, storingDtype=None, storingDevice=None):
+def generateTrainingDatabase(qr2xyParams, Nx, Ny, batch_size=2000, storingDtype=None, storingDevice=None, computeDtype=None, computeDevice=None):
     q_max, r_max, eps, beta_q, gamma_r = qr2xyParams.q_max, qr2xyParams.r_max, qr2xyParams.eps, qr2xyParams.beta_q, qr2xyParams.gamma_r
     q, r = _make_qr_grid(q_max, r_max, eps, beta_q, gamma_r, Nx, Ny, dtype=storingDtype, device=storingDevice)
-    return _build_database(q, r, storingDtype, storingDevice)
+    return _build_database(q, r, batch_size, storingDtype, storingDevice, computeDtype, computeDevice)
 
 
-def generateValidationDatabase(qr2xyParams, Nsamples, storingDtype=None, storingDevice=None, scramble=True, seed=None):
+def generateValidationDatabase(qr2xyParams, Nsamples, batch_size=2000, storingDtype=None, storingDevice=None, computeDtype=None, computeDevice=None, scramble=True, seed=None):
     q_max, r_max, eps, beta_q, gamma_r = qr2xyParams.q_max, qr2xyParams.r_max, qr2xyParams.eps, qr2xyParams.beta_q, qr2xyParams.gamma_r
     q, r = _make_qr_halton(q_max, r_max, eps, beta_q, gamma_r, Nsamples, dtype=storingDtype, device=storingDevice, scramble=scramble, seed=seed)
-    return _build_database(q, r, storingDtype, storingDevice)
+    return _build_database(q, r, batch_size, storingDtype, storingDevice, computeDtype, computeDevice)
 
 
 def clean(*datasets, checkOn=None, verbose=False):

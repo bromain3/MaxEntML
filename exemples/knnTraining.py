@@ -20,19 +20,22 @@ from MaxEntML.dataRepresentation.qr2xyData import qr2xyData
 dtbFile = "../databases/grid_with_lambdas.csv"
 cleanedDtbFile = "../databases/grid_with_lambdas_clean.csv"
 
-storingDevice = 'cuda:0'
+storingDevice = 'cpu'
 storingDtype = torch.float64
+
+computeDevice = 'cuda:0'
+computeDtype = torch.float64
 
 #_________________________________________________________
 
 ## generation de la base de données de train
 qr2xyDataObj = qr2xyData(q_max=3, r_max=15, eps=1e-1, beta_q=1.5, gamma_r=1.5)
-qr, lambdas = generateTrainingDatabase(qr2xyDataObj, Nx=int(0.5**(0.5)*200), Ny=int(0.5**(0.5)*80), storingDtype=storingDtype, storingDevice=storingDevice)
+qr, lambdas = generateTrainingDatabase(qr2xyDataObj, Nx=int(100**(0.5)*200), Ny=int(100**(0.5)*80), batch_size=50000, storingDtype=storingDtype, storingDevice=storingDevice, computeDevice=computeDevice, computeDtype=computeDtype)
 plotLambdasSymLog(qr, lambdas)
 qr, lambdas = clean(qr, lambdas, verbose=True)
 
 ## generation de la base de données de validation
-qr_val, lambdas_val = generateValidationDatabase(qr2xyDataObj, Nsamples=500, storingDtype=storingDtype, storingDevice=storingDevice)
+qr_val, lambdas_val = generateValidationDatabase(qr2xyDataObj, Nsamples=500, storingDtype=storingDtype, storingDevice=storingDevice, computeDevice=computeDevice, computeDtype=computeDtype)
 plotLambdasSymLog(qr_val, lambdas_val)
 qr_val, lambdas_val = clean(qr_val, lambdas_val, verbose=True)
 

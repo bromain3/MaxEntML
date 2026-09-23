@@ -65,18 +65,13 @@ def _solve(q_batch, r_batch):
     return lam
 
 
-@torch.no_grad()
-def compute_lambdas(q, r, batch_size=2000, compute_device=None, show_progress=True):
-    """Lambdas MaxEnt sur une grille (Nu, Nv) de points (q*, r*) avec quadrature fixe."""
-    orig_device = q.device
-    if compute_device is not None:
-        compute_device = torch.device(compute_device)
-        q = q.to(compute_device)
-        r = r.to(compute_device)
-    else:
-        compute_device = orig_device
 
+@torch.no_grad()
+def compute_lambdas(q, r, batch_size=2000, storingDtype=None, storingDevice=None, compute_device=None, compute_dtype=None, show_progress=True):
+    """Lambdas MaxEnt sur une grille (Nu, Nv) de points (q*, r*) avec quadrature fixe."""
+    compute_device = torch.device(compute_device) if compute_device is not None else None
     total_elements = q.numel()
+    print(f'Computing lambdas for {total_elements} samples')
     q_flat = q.reshape(-1)
     r_flat = r.reshape(-1)
 
@@ -91,14 +86,14 @@ def compute_lambdas(q, r, batch_size=2000, compute_device=None, show_progress=Tr
             pass
 
     for i in iterator:
-        q_batch = q_flat[i:i + batch_size]
-        r_batch = r_flat[i:i + batch_size]
+        q_batch = q_flat[i:i + batch_size].to(device=compute_device, dtype=compute_dtype)
+        r_batch = r_flat[i:i + batch_size].to(device=compute_device, dtype=compute_dtype)
         
         # 1. Computation happens on the GPU (compute_device)
         lam_batch = _solve(q_batch, r_batch)
         
         # 2. Immediately offload the batch to CPU memory to free VRAM
-        lam_list.append(lam_batch.cpu())
+        lam_list.append(lam_batch.to(device=storingDevice, dtype=storingDtype))
         
         if compute_device.type == "cuda":
             torch.cuda.empty_cache()
@@ -106,9 +101,5 @@ def compute_lambdas(q, r, batch_size=2000, compute_device=None, show_progress=Tr
 
     # 3. Concatenate results on CPU memory
     lam = torch.cat(lam_list).reshape(*q.shape, NMOM)
-    
-    # 4. Return to original device only if the user explicitly wants it back on GPU
-    if orig_device != lam.device:
-        lam = lam.to(orig_device)
         
     return lam

@@ -21,8 +21,11 @@ from MaxEntML.dataRepresentation.serie import serie
 dtbFile = "../databases/grid_with_lambdas.csv"
 cleanedDtbFile = "../databases/grid_with_lambdas_clean.csv"
 
-storingDevice = 'cuda:1'
+storingDevice = 'cpu'
 storingDtype = torch.float64
+
+computeDevice = 'cuda:0'
+computeDtype = torch.float64
 
 #_________________________________________________________
 
@@ -31,12 +34,12 @@ qr2xyDataObj = qr2xyData(q_max=3, r_max=15, eps=1e-1, beta_q=1.5, gamma_r=1.5)
 #qr2xyDataObj = qr2xyData.load('qr2xy.json')
 #qr = serie.load('qr.pt')
 #lambdas =  serie.load('lambdas.pt')
-qr, lambdas = generateTrainingDatabase(qr2xyDataObj, Nx=int(1**(0.5) * 200), Ny=int(1**(0.5) * 80), storingDtype=storingDtype, storingDevice=storingDevice)
+qr, lambdas = generateTrainingDatabase(qr2xyDataObj, Nx=int(1**(0.5) * 200), Ny=int(1**(0.5) * 80), storingDtype=storingDtype, storingDevice=storingDevice, computeDevice=computeDevice, computeDtype=computeDtype)
 plotLambdasSymLog(qr, lambdas)
 qr, lambdas = clean(qr, lambdas, verbose=True)
 
 ## generation de la base de données de validation
-qr_val, lambdas_val = generateValidationDatabase(qr2xyDataObj, Nsamples=500, storingDtype=storingDtype, storingDevice=storingDevice)
+qr_val, lambdas_val = generateValidationDatabase(qr2xyDataObj, Nsamples=500, storingDtype=storingDtype, storingDevice=storingDevice, computeDevice=computeDevice, computeDtype=computeDtype)
 plotLambdasSymLog(qr_val, lambdas_val)
 qr_val, lambdas_val = clean(qr_val, lambdas_val, verbose=True)
 
@@ -62,7 +65,7 @@ plotLambdas(xy, lambdasScaled)
 #model = MLPRegressorModel(inputDim=xy.nFeatures, outputDim=lambdas.nFeatures, hiddenLayers=(1024, 1024, 1024), activation="silu", dtype=torch.float32, device=storingDevice)
 model = ResNetRegressorModel(inputDim=xy.nFeatures, outputDim=lambdas.nFeatures, backboneDim=556, nbBlocks=4, hiddenDim=260,
                  layerNorm=True, useBackbone=True, activationOnOutput=False, kaimingInit=False,
-                 dtype=torch.float32, device=storingDevice, seed=None)
+                 dtype=torch.float32, device=computeDevice, seed=None)
 ## model training (and associating scalers to the model depending on inputs)
 inData, lambdas = clean(xy, lambdasScaled, verbose=True)
 model.inputScaler = xyScaler
