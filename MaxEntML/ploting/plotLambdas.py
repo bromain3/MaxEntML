@@ -95,7 +95,7 @@ def _plot_phase_space(ax, q_flat, r_flat, xlabel="$q^*$", ylabel="$r^*$"):
 
     ax.set_title(title_str, fontsize=11, fontweight="bold")
     ax.set_xlabel(xlabel, fontsize=10)
-    ax.set_ylabel(ylabel, fontsize=10)
+    ax.set_ylabel(ylabel, fontsize=10, rotation=0, labelpad=6)
     ax.grid(True, linestyle=":", alpha=0.4)
     ax.legend(loc="upper right", fontsize=8, framealpha=0.85)
 
@@ -151,7 +151,7 @@ def _plot_lambdas_normed(qr, lambdas, *, norm_factory, valid_fn, cmap, n_levels,
             ax.set_title(f"Multiplier $\\lambda_{{{k}}}$ ({scale_name})",
                          fontsize=11, fontweight="bold")
             ax.set_xlabel(xlabel, fontsize=10)
-            ax.set_ylabel(ylabel, fontsize=10)
+            ax.set_ylabel(ylabel, fontsize=10, rotation=0, labelpad=6)
             ax.grid(True, linestyle=":", alpha=0.4)
 
         # Cache les subplots inutilisés (dernier paquet incomplet)
@@ -234,7 +234,7 @@ def _plot_phase_space_3d(ax, q_flat, r_flat, xlabel="$q^*$", ylabel="$r^*$"):
 
     ax.set_title(title_str, fontsize=11, fontweight="bold")
     ax.set_xlabel(xlabel, fontsize=10)
-    ax.set_ylabel(ylabel, fontsize=10)
+    ax.set_ylabel(ylabel, fontsize=10, rotation=0, labelpad=6)
     ax.set_zticks([])
     ax.legend(loc="upper right", fontsize=8, framealpha=0.85)
 
@@ -283,7 +283,7 @@ def _plot_lambdas_normed_3d(qr, lambdas, *, norm_factory, valid_fn, cmap, n_leve
             ax.set_title(f"Multiplier $\\lambda_{{{k}}}$ ({scale_name})",
                          fontsize=11, fontweight="bold")
             ax.set_xlabel(xlabel, fontsize=10)
-            ax.set_ylabel(ylabel, fontsize=10)
+            ax.set_ylabel(ylabel, fontsize=10, rotation=0, labelpad=6)
             ax.set_zlabel(f"$\\lambda_{{{k}}}$", fontsize=10)
 
         for slot in range(stop - start, 5):
