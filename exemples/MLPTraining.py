@@ -1,8 +1,8 @@
 import torch
 
-from MaxEntML.ploting.plotLambdas2D import plotLambdas, plotLambdasLog, plotLambdasSymLog
-from MaxEntML.models.MLP import MLPRegressorModel
-from MaxEntML.models.ResNet import ResNetRegressorModel
+from MaxEntML.ploting.plotLambdas import plotLambdas, plotLambdasLog, plotLambdasSymLog
+from MaxEntML.models.MLP import MLPNNRegressorModel
+from MaxEntML.models.ResNet import ResNetNNRegressorModel
 from MaxEntML.dtbProcessing.qr2xy import qr2xyScaler
 from MaxEntML.dtbProcessing.identityScaler import identityScaler
 from MaxEntML.dtbProcessing.symLogScaler import symlogScaler
@@ -62,10 +62,10 @@ plotLambdas(xy, lambdasScaled)
 
 
 ## model creation
-#model = MLPRegressorModel(inputDim=xy.nFeatures, outputDim=lambdas.nFeatures, hiddenLayers=(1024, 1024, 1024), activation="silu", dtype=torch.float32, device=storingDevice)
-model = ResNetRegressorModel(inputDim=xy.nFeatures, outputDim=lambdas.nFeatures, backboneDim=556, nbBlocks=4, hiddenDim=260,
-                 layerNorm=True, useBackbone=True, activationOnOutput=False, kaimingInit=False,
-                 dtype=torch.float32, device=computeDevice, seed=None)
+#model = MLPNNRegressorModel(inputDim=xy.nFeatures, outputDim=lambdas.nFeatures, hiddenLayers=(1024, 1024, 1024), activation="silu", dtype=torch.float32, device=storingDevice)
+model = ResNetNNRegressorModel(inputDim=xy.nFeatures, outputDim=lambdas.nFeatures, backboneDim=556, nbBlocks=4, hiddenDim=260,
+                               layerNorm=True, useBackbone=True, activationOnOutput=False, kaimingInit=False,
+                               dtype=torch.float32, device=computeDevice, seed=None)
 ## model training (and associating scalers to the model depending on inputs)
 inData, lambdas = clean(xy, lambdasScaled, verbose=True)
 model.inputScaler = xyScaler

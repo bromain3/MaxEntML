@@ -3,7 +3,7 @@ import torch
 
 from MaxEntML.dataRepresentation.serie import serie
 from MaxEntML.dataRepresentation.qr2xyData import qr2xyData
-from MaxEntML.ploting.plotLambdas2D import plotLambdas
+from MaxEntML.ploting.plotLambdas import plotLambdas
 from MaxEntML.dtbGeneration.dtbGen import generateTargets, generateTrainingDatabase, generateValidationDatabase
 
 #_________________________________________________________

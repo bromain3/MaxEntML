@@ -1,6 +1,6 @@
 import torch
 
-from MaxEntML.ploting.plotLambdas2D import plotLambdas, plotLambdasLog, plotLambdasSymLog
+from MaxEntML.ploting.plotLambdas import plotLambdas3D, plotLambdasLog3D, plotLambdasSymLog3D
 from MaxEntML.models.knn import kNNRegressorModel
 from MaxEntML.dtbProcessing.qr2xy import qr2xyScaler
 from MaxEntML.dtbProcessing.identityScaler import identityScaler
@@ -30,39 +30,39 @@ computeDtype = torch.float64
 
 ## generation de la base de données de train
 qr2xyDataObj = qr2xyData(q_max=3, r_max=15, eps=1e-1, beta_q=1.5, gamma_r=1.5)
-qr, lambdas = generateTrainingDatabase(qr2xyDataObj, Nx=int(100**(0.5)*200), Ny=int(100**(0.5)*80), batch_size=50000, storingDtype=storingDtype, storingDevice=storingDevice, computeDevice=computeDevice, computeDtype=computeDtype)
-plotLambdasSymLog(qr, lambdas)
+qr, lambdas = generateTrainingDatabase(qr2xyDataObj, Nx=int(0.5**(0.5)*200), Ny=int(0.5**(0.5)*80), batch_size=50000, storingDtype=storingDtype, storingDevice=storingDevice, computeDevice=computeDevice, computeDtype=computeDtype)
+plotLambdasSymLog3D(qr, lambdas)
 qr, lambdas = clean(qr, lambdas, verbose=True)
 
 ## generation de la base de données de validation
-qr_val, lambdas_val = generateValidationDatabase(qr2xyDataObj, Nsamples=500, storingDtype=storingDtype, storingDevice=storingDevice, computeDevice=computeDevice, computeDtype=computeDtype)
-plotLambdasSymLog(qr_val, lambdas_val)
+qr_val, lambdas_val = generateValidationDatabase(qr2xyDataObj, Nsamples=2000, storingDtype=storingDtype, storingDevice=storingDevice, computeDevice=computeDevice, computeDtype=computeDtype)
+plotLambdasSymLog3D(qr_val, lambdas_val)
 qr_val, lambdas_val = clean(qr_val, lambdas_val, verbose=True)
 
 ## generation de la base de données de validation
 
 ## scaling
-xyScaler = qr2xyScaler(qr2xyDataObj)
-xy = xyScaler.fit_transform(qr)
+#xyScaler = qr2xyScaler(qr2xyDataObj)
+#xy = xyScaler.fit_transform(qr)
 #inScaler = qr2xyScaler(q_max=3, r_max=15, eps=0, beta_q=1.5, gamma_r=2) + featureAugmentation([[inverse() + minMaxScaler()], [inverse() + minMaxScaler()]])
 #inData = inScaler.fit_transform(qr)
 #print(inData.data)
 #print(inData.colName)
-#qrScaler = stdScaler()
-#qrScaled = qrScaler.fit_transform(qr)
+qrScaler = stdScaler()
+qrScaled = qrScaler.fit_transform(qr)
 lambdasScaler = symlogScaler() + stdScaler()
 lambdasScaled = lambdasScaler.fit_transform(lambdas)
 
 ## ploting the lambdas in the xy plane to check
-plotLambdas(xy, lambdasScaled)
+plotLambdas3D(qrScaled, lambdasScaled)
 
 
 ## model creation
 model = kNNRegressorModel(n_neighbors=5)
 
 ## model training (and associating scalers to the model depending on inputs)
-inData, lambdas = clean(xy, lambdasScaled, verbose=True)
-model.inputScaler = xyScaler
+inData, lambdas = clean(qrScaled, lambdasScaled, verbose=True)
+model.inputScaler = qrScaler
 model.outputScaler = lambdasScaler
 train(model, inData, lambdasScaled)
 
@@ -74,6 +74,6 @@ model.save('model.pkl')
 
 ## model validation
 lambda_err = validate(model, qr_val, lambdas_val)
-plotLambdasLog(qr_val, lambda_err)
+plotLambdasLog3D(qr_val, lambda_err)
 
 

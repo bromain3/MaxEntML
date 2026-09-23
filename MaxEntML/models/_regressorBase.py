@@ -1,105 +1,68 @@
-import inspect
-
-import torch
 import joblib
 
 from MaxEntML.dataRepresentation.serie import serie
 
 
-class _RegressorBase:
+class BaseRegressorModel:
     """
-    Base commune des modèles de régression torch : inférence + sauvegarde / chargement.
+    Classe de base factorisant la logique commune à tous les wrappers de
+    modèles de régression scikit-learn (fit / predict / save / load).
 
-    Une sous-classe doit :
-    - renseigner ses propres hyperparamètres d'architecture AVANT d'appeler super().__init__()
-    - implémenter _buildCore()      -> renvoie le nn.Module (entrée inputDim, sortie outputDim)
-    - implémenter _hyperparams()    -> dict des hyperparamètres d'architecture (== arguments du constructeur)
-
-    predict() prend des données physiques : la normalisation / dénormalisation passe par
-    inputScaler / outputScaler, à renseigner avant predict().
-    L'entraînement se fait avec la fonction `train`.
+    Chaque sous-classe doit, dans son __init__, construire self.core avec
+    l'estimateur scikit-learn voulu (déjà paramétré, non entraîné).
+    Elle peut éventuellement surcharger _corePayload()/_loadExtra() si
+    elle a des attributs supplémentaires à persister (cf. kNNRegressorModel
+    qui garde n_neighbors à part, à titre indicatif).
     """
-    def __init__(self, inputDim, outputDim, dtype=torch.float32, device="cpu", seed=None):
-        self.inputDim = inputDim
-        self.outputDim = outputDim
-        self.dtype = dtype
-        self.device = torch.device(device)
-        self.seed = seed
 
-        if seed is not None:
-            torch.manual_seed(seed)
-        self.core = self._buildCore()
-        self.core.to(device=self.device, dtype=self.dtype)
-
+    def __init__(self):
+        self.core = None
         self.inputScaler = None
         self.outputScaler = None
+
         self.inputColName = None
         self.outputColName = None
-        self.yWasFlat = False
-        self.lossHistory = []
 
-    def _buildCore(self):
-        raise NotImplementedError
-
-    def _hyperparams(self):
-        raise NotImplementedError
+    def fit(self, XScaled, YScaled):
+        self.core.fit(XScaled.data.cpu().detach().numpy(), YScaled.data.cpu().detach().numpy())
+        self.inputColName = XScaled.colName
+        self.outputColName = YScaled.colName
 
     def predict(self, XPhys):
-        XScaled = self.inputScaler.transform(XPhys).data.detach()
-        XScaled = XScaled.to(device=self.device, dtype=self.dtype)
-        XScaled = XScaled.reshape(XScaled.shape[0], -1)
-
-        self.core.eval()
-        with torch.no_grad():
-            pred = self.core(XScaled)
-        pred = pred.cpu().numpy()
-        if self.yWasFlat:
-            pred = pred.ravel()
-
+        XScaled = self.inputScaler.transform(XPhys).data.cpu().detach().numpy()
+        pred = self.core.predict(XScaled)
         pred = serie(pred, colName=self.outputColName, storingDtype=XPhys.storingDtype, storingDevice=XPhys.storingDevice)
-        return self.outputScaler.inverse_transform(pred)
+        return (self.outputScaler.inverse_transform(pred))
+
+    def _corePayload(self):
+        """A surcharger si des champs specifiques a la sous-classe doivent etre sauvegardes."""
+        return {}
+
+    def _loadExtra(self, payload):
+        """A surcharger pour relire les champs ajoutes par _corePayload()."""
+        pass
 
     def save(self, filename):
-        joblib.dump({
-            "version": 2,
-            "hyperparams": {
-                "inputDim": self.inputDim,
-                "outputDim": self.outputDim,
-                "dtype": self.dtype,
-                "seed": self.seed,
-                **self._hyperparams(),
-            },
-            "yWasFlat": self.yWasFlat,
-            "stateDict": {k: v.cpu() for k, v in self.core.state_dict().items()},
-            "lossHistory": self.lossHistory,
+        payload = {
+            "version": 1,
+            "core": self.core,
             "inputScaler": self.inputScaler,
             "outputScaler": self.outputScaler,
             "inputColName": self.inputColName,
             "outputColName": self.outputColName,
-        }, filename)
+        }
+        payload.update(self._corePayload())
+        joblib.dump(payload, filename)
 
     @classmethod
-    def load(cls, filename, device="cpu"):
+    def load(cls, filename):
         payload = joblib.load(filename)
-        hp = dict(payload["hyperparams"])
-
-        # compatibilité avec les sauvegardes v1 (inputDim / outputDim hors de hyperparams)
-        hp.setdefault("inputDim", payload.get("inputDim"))
-        hp.setdefault("outputDim", payload.get("outputDim"))
-        # on ne touche pas à la seed globale au chargement
-        hp.pop("seed", None)
-        # on ignore les clés que le constructeur n'accepte pas (ex. lr, epochs des anciennes versions)
-        accepted = inspect.signature(cls.__init__).parameters
-        hp = {k: v for k, v in hp.items() if k in accepted}
-
-        obj = cls(device=device, **hp)
-        obj.core.load_state_dict(payload["stateDict"])
-        obj.core.to(device=obj.device, dtype=obj.dtype)
-        obj.core.eval()
-        obj.yWasFlat = payload["yWasFlat"]
-        obj.lossHistory = payload["lossHistory"]
+        obj = cls.__new__(cls)
+        BaseRegressorModel.__init__(obj)
+        obj.core = payload["core"]
         obj.inputScaler = payload["inputScaler"]
         obj.outputScaler = payload["outputScaler"]
         obj.inputColName = payload["inputColName"]
         obj.outputColName = payload["outputColName"]
+        obj._loadExtra(payload)
         return obj

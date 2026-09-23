@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from ._regressorBase import _RegressorBase
+from ._NNregressorBase import _NNRegressorBase
 
 
 class _ResBlock(nn.Module):
@@ -54,10 +54,10 @@ class _ResNetCore(nn.Module):
         return self.outputLayer(self.resnet(self.backboneAct(self.backbone(x))))
 
 
-class ResNetRegressorModel(_RegressorBase):
+class ResNetRegressorModel(_NNRegressorBase):
     """
     ResNet (MLP résiduel) pour la régression : architecture uniquement
-    (predict / save / load dans _RegressorBase, entraînement avec `train`).
+    (predict / save / load dans _NNRegressorBase, entraînement avec `train`).
 
     Paramètres :
     - inputDim, outputDim : dimensions d'entrée / sortie
@@ -68,7 +68,7 @@ class ResNetRegressorModel(_RegressorBase):
     - useBackbone  : Linear d'entrée (inputDim -> backboneDim) + couche de sortie
     - activationOnOutput : SiLU après chaque addition résiduelle
     - kaimingInit  : initialisation Kaiming (uniform, nonlinearity='relu') des Linear, biais à 0
-    - dtype, device, seed : comme pour MLPRegressorModel
+    - dtype, device, seed : comme pour MLPNNRegressorModel
     """
     def __init__(self, inputDim, outputDim, backboneDim=64, nbBlocks=3, hiddenDim=128,
                  layerNorm=True, useBackbone=True, activationOnOutput=False, kaimingInit=False,

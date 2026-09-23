@@ -3,7 +3,7 @@ import torch.nn as nn
 from tqdm import tqdm
 
 
-def train(MLPModel: "MLPRegressorModel", scaledInputData: "serie", scaledOutputData: "serie",
+def train(MLPModel: "MLPNNRegressorModel", scaledInputData: "serie", scaledOutputData: "serie",
           lr=5e-3, weightDecay=0.0, epochs=500, batchSize=128,
           warmupSteps=2000, decayRate=0.92, decaySteps=1500,
           seed=None, progress=True):

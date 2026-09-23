@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from ._regressorBase import _RegressorBase
+from ._NNregressorBase import _NNRegressorBase
 
 
 _ACTIVATIONS = {
@@ -23,9 +23,9 @@ def _buildMLP(inputDim, outputDim, hiddenLayers, activation):
     return nn.Sequential(*layers)
 
 
-class MLPRegressorModel(_RegressorBase):
+class MLPRegressorModel(_NNRegressorBase):
     """
-    MLP torch pour la régression : architecture uniquement (predict / save / load dans _RegressorBase).
+    MLP torch pour la régression : architecture uniquement (predict / save / load dans _NNRegressorBase).
 
     Paramètres :
     - inputDim, outputDim : dimensions d'entrée / sortie du réseau
