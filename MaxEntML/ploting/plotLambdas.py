@@ -160,8 +160,8 @@ def _plot_lambdas_normed(qr, lambdas, *, norm_factory, valid_fn, cmap, n_levels,
 
         _plot_phase_space(axes[5], q_flat, r_flat, xlabel=xlabel, ylabel=ylabel)
 
-        fig.suptitle(f"Multipliers $\\lambda_{{{start}}}$ – $\\lambda_{{{stop - 1}}}$ "
-                     f"— {scale_name} scale", fontsize=13, fontweight="bold")
+        # fig.suptitle(f"Multipliers $\\lambda_{{{start}}}$ – $\\lambda_{{{stop - 1}}}$ "
+        #              f"— {scale_name} scale", fontsize=13, fontweight="bold")
         fig.tight_layout()
 
     plt.show()
@@ -291,8 +291,8 @@ def _plot_lambdas_normed_3d(qr, lambdas, *, norm_factory, valid_fn, cmap, n_leve
 
         _plot_phase_space_3d(axes[5], q_flat, r_flat, xlabel=xlabel, ylabel=ylabel)
 
-        fig.suptitle(f"Multipliers $\\lambda_{{{start}}}$ – $\\lambda_{{{stop - 1}}}$ "
-                     f"— {scale_name} scale (3D)", fontsize=13, fontweight="bold")
+        # fig.suptitle(f"Multipliers $\\lambda_{{{start}}}$ – $\\lambda_{{{stop - 1}}}$ "
+        #              f"— {scale_name} scale (3D)", fontsize=13, fontweight="bold")
         fig.tight_layout()
 
     plt.show()
